@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import Logo from "../assets/logo.svg";
 
-export default function Contacts({ contacts, changeChat }) {
+export default function Contacts({ contacts, changeChat, unreadCounts = {} }) {
   const [currentUserName, setCurrentUserName] = useState(undefined);
   const [currentUserImage, setCurrentUserImage] = useState(undefined);
   const [currentSelected, setCurrentSelected] = useState(undefined);
@@ -19,14 +19,18 @@ export default function Contacts({ contacts, changeChat }) {
   };
   return (
     <>
-      {currentUserImage && currentUserImage && (
+      {currentUserImage && (
         <Container>
           <div className="brand">
-            <img src={Logo} alt="logo" />
-            <h3>snappy</h3>
+            <div className="logo-wrapper">
+              <img src={Logo} alt="logo" />
+            </div>
+            <h3>Snappy</h3>
           </div>
           <div className="contacts">
+            <div className="section-label">DIRECT MESSAGES</div>
             {contacts.map((contact, index) => {
+              const unread = unreadCounts[contact._id] || 0;
               return (
                 <div
                   key={contact._id}
@@ -40,23 +44,32 @@ export default function Contacts({ contacts, changeChat }) {
                       src={`data:image/svg+xml;base64,${contact.avatarImage}`}
                       alt=""
                     />
+                    {contact.isOnline && <span className="contact-online-dot" />}
                   </div>
                   <div className="username">
                     <h3>{contact.username}</h3>
                   </div>
+                  {unread > 0 && index !== currentSelected && (
+                    <span className="unread-badge">{unread}</span>
+                  )}
+                  {index === currentSelected && <span className="active-pip" />}
                 </div>
               );
             })}
           </div>
           <div className="current-user">
-            <div className="avatar">
-              <img
-                src={`data:image/svg+xml;base64,${currentUserImage}`}
-                alt="avatar"
-              />
+            <div className="avatar-wrapper">
+              <div className="avatar">
+                <img
+                  src={`data:image/svg+xml;base64,${currentUserImage}`}
+                  alt="avatar"
+                />
+              </div>
+              <span className="status-dot" />
             </div>
             <div className="username">
               <h2>{currentUserName}</h2>
+              <span className="status-text">Active now</span>
             </div>
           </div>
         </Container>
@@ -64,89 +77,240 @@ export default function Contacts({ contacts, changeChat }) {
     </>
   );
 }
+
 const Container = styled.div`
+  height: 100%;
+  max-height: 100%;
   display: grid;
-  grid-template-rows: 10% 75% 15%;
+  grid-template-rows: 4.5rem 1fr 4.8rem;
   overflow: hidden;
-  background-color: #080420;
+  background: rgba(11, 15, 26, 0.85);
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+
   .brand {
+    height: 100%;
     display: flex;
     align-items: center;
-    gap: 1rem;
-    justify-content: center;
-    img {
-      height: 2rem;
+    gap: 0.9rem;
+    padding: 0 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+
+    .logo-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.2rem;
+      height: 2.2rem;
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2));
+      border: 1px solid rgba(99, 102, 241, 0.3);
+
+      img {
+        height: 1.4rem;
+      }
     }
+
     h3 {
-      color: white;
-      text-transform: uppercase;
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      background: linear-gradient(135deg, #f8fafc 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-transform: capitalize;
     }
   }
+
   .contacts {
+    height: 100%;
+    min-height: 0;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    overflow: auto;
-    gap: 0.8rem;
+    padding: 0.8rem;
+    overflow-y: auto;
+    gap: 0.5rem;
+
+    .section-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: 1.2px;
+      padding: 0.2rem 0.6rem 0.3rem;
+    }
+
     &::-webkit-scrollbar {
-      width: 0.2rem;
+      width: 4px;
       &-thumb {
-        background-color: #ffffff39;
-        width: 0.1rem;
-        border-radius: 1rem;
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
       }
     }
+
     .contact {
-      background-color: #ffffff34;
-      min-height: 5rem;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.04);
       cursor: pointer;
-      width: 90%;
-      border-radius: 0.2rem;
-      padding: 0.4rem;
+      width: 100%;
+      border-radius: 12px;
+      padding: 0.6rem 0.8rem;
       display: flex;
-      gap: 1rem;
+      gap: 0.85rem;
       align-items: center;
-      transition: 0.5s ease-in-out;
+      position: relative;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.07);
+        border-color: rgba(99, 102, 241, 0.25);
+        transform: translateY(-1px);
+      }
+
       .avatar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.6rem;
+        height: 2.6rem;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 2px;
+        flex-shrink: 0;
+        position: relative;
+
         img {
-          height: 3rem;
+          height: 100%;
+          width: 100%;
+          border-radius: 50%;
+        }
+
+        .contact-online-dot {
+          position: absolute;
+          bottom: 1px;
+          right: 1px;
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background-color: #10b981;
+          border: 1.5px solid #0b0f1a;
+          box-shadow: 0 0 6px #10b981;
         }
       }
+
       .username {
+        overflow: hidden;
         h3 {
-          color: white;
+          color: #e2e8f0;
+          font-size: 0.9rem;
+          font-weight: 600;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
+      }
+
+      .unread-badge {
+        margin-left: auto;
+        background: #ef4444;
+        color: white;
+        font-size: 0.7rem;
+        font-weight: 700;
+        min-width: 1.25rem;
+        height: 1.25rem;
+        padding: 0 0.35rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9999px;
+        box-shadow: 0 0 10px rgba(239, 68, 68, 0.45);
+        flex-shrink: 0;
+      }
+
+      .active-pip {
+        margin-left: auto;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #8b5cf6;
+        box-shadow: 0 0 8px #8b5cf6;
+        flex-shrink: 0;
       }
     }
+
     .selected {
-      background-color: #9a86f3;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.22), rgba(168, 85, 247, 0.22));
+      border: 1px solid rgba(139, 92, 246, 0.45);
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.15);
+
+      .username h3 {
+        color: #ffffff;
+        font-weight: 700;
+      }
     }
   }
 
   .current-user {
-    background-color: #0d0d30;
+    height: 100%;
+    background: rgba(7, 10, 19, 0.95);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
     display: flex;
-    justify-content: center;
     align-items: center;
-    gap: 2rem;
-    .avatar {
-      img {
-        height: 4rem;
-        max-inline-size: 100%;
-      }
-    }
-    .username {
-      h2 {
-        color: white;
-      }
-    }
-    @media screen and (min-width: 720px) and (max-width: 1080px) {
-      gap: 0.5rem;
-      .username {
-        h2 {
-          font-size: 1rem;
+    padding: 0 1.2rem;
+    gap: 0.9rem;
+
+    .avatar-wrapper {
+      position: relative;
+      flex-shrink: 0;
+
+      .avatar {
+        width: 2.8rem;
+        height: 2.8rem;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 2px;
+
+        img {
+          height: 100%;
+          width: 100%;
+          border-radius: 50%;
         }
       }
+
+      .status-dot {
+        position: absolute;
+        bottom: 1px;
+        right: 1px;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background-color: #10b981;
+        border: 2px solid #070a13;
+        box-shadow: 0 0 8px #10b981;
+      }
+    }
+
+    .username {
+      overflow: hidden;
+
+      h2 {
+        color: #f8fafc;
+        font-size: 0.92rem;
+        font-weight: 700;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .status-text {
+        font-size: 0.72rem;
+        color: #10b981;
+        font-weight: 500;
+        display: block;
+      }
+    }
+
+    @media screen and (min-width: 720px) and (max-width: 1080px) {
+      gap: 0.6rem;
+      padding: 0 0.8rem;
     }
   }
 `;

@@ -45,6 +45,8 @@ module.exports.getAllUsers = async (req, res, next) => {
       "email",
       "username",
       "avatarImage",
+      "isOnline",
+      "lastSeen",
       "_id",
     ]);
     return res.json(users);
@@ -74,10 +76,22 @@ module.exports.setAvatar = async (req, res, next) => {
   }
 };
 
-module.exports.logOut = (req, res, next) => {
+module.exports.logOut = async (req, res, next) => {
   try {
     if (!req.params.id) return res.json({ msg: "User id is required " });
     onlineUsers.delete(req.params.id);
+    const now = new Date();
+    await User.findByIdAndUpdate(req.params.id, {
+      isOnline: false,
+      lastSeen: now,
+    });
+    if (global.io) {
+      global.io.emit("user-status-changed", {
+        userId: req.params.id,
+        isOnline: false,
+        lastSeen: now,
+      });
+    }
     return res.status(200).send();
   } catch (ex) {
     next(ex);
