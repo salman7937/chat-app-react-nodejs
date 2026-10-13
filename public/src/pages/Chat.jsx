@@ -45,7 +45,13 @@ export default function Chat() {
 
   useEffect(() => {
     if (currentUser) {
-      socket.current = io(host);
+      socket.current = io(host, {
+        transports: ["websocket", "polling"],
+      });
+
+      socket.current.on("connect", () => {
+        socket.current.emit("add-user", currentUser._id);
+      });
       socket.current.emit("add-user", currentUser._id);
 
       socket.current.on("user-status-changed", (data) => {

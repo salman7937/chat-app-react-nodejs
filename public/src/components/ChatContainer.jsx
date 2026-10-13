@@ -100,20 +100,22 @@ export default function ChatContainer({ currentChat, socket }) {
       const handleMsgRecieve = (payload) => {
         const incoming =
           typeof payload === "object"
-            ? payload
-            : { message: payload, fromSelf: false, messageType: "text" };
+            ? { ...payload }
+            : { message: payload, messageType: "text" };
 
         incoming.fromSelf = false;
-        setArrivalMessage(incoming);
+        if (incoming.from === currentChat._id) {
+          setMessages((prev) => [...prev, incoming]);
 
-        const user = JSON.parse(
-          localStorage.getItem(process.env.REACT_APP_LOCALHOST_KEY)
-        );
-        if (user?._id) {
-          socket.current.emit("mark-messages-read", {
-            from: user._id,
-            to: currentChat._id,
-          });
+          const user = JSON.parse(
+            localStorage.getItem(process.env.REACT_APP_LOCALHOST_KEY)
+          );
+          if (user?._id) {
+            socket.current.emit("mark-messages-read", {
+              from: user._id,
+              to: currentChat._id,
+            });
+          }
         }
       };
 
