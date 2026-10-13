@@ -19,11 +19,18 @@ import { IoMdClose } from "react-icons/io";
 
 const REACTION_EMOJIS = ["❤️", "😂", "👍", "🔥", "😮", "😢"];
 
-export default function ChatContainer({ currentChat, socket, onBack }) {
+export default function ChatContainer({
+  currentChat,
+  socket,
+  onBack,
+  onToggleBlock,
+}) {
   const [messages, setMessages] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const [activeMenuMessageId, setActiveMenuMessageId] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef(null);
   const chatMessagesRef = useRef(null);
   const [arrivalMessage, setArrivalMessage] = useState(null);
 
@@ -63,18 +70,48 @@ export default function ChatContainer({ currentChat, socket, onBack }) {
     getCurrentChat();
   }, [currentChat]);
 
+  useEffect(() => {
+    setShowMenu(false);
+  }, [currentChat?._id]);
+
+  useEffect(() => {
+    if (!showMenu) return undefined;
+    const handleOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutside);
+    document.addEventListener("touchstart", handleOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+      document.removeEventListener("touchstart", handleOutside);
+    };
+  }, [showMenu]);
+
+  const handleBlockClick = () => {
+    setShowMenu(false);
+    if (onToggleBlock) onToggleBlock(currentChat);
+  };
+
   const handleSendMsg = async (msg, messageType = "text", mediaUrl = "") => {
     const data = await JSON.parse(
       localStorage.getItem(process.env.REACT_APP_LOCALHOST_KEY)
     );
 
-    const response = await axios.post(sendMessageRoute, {
-      from: data._id,
-      to: currentChat._id,
-      message: msg,
-      messageType,
-      mediaUrl,
-    });
+    let response;
+    try {
+      response = await axios.post(sendMessageRoute, {
+        from: data._id,
+        to: currentChat._id,
+        message: msg,
+        messageType,
+        mediaUrl,
+      });
+    } catch (err) {
+      // e.g. 403 when this contact is blocked - nothing was sent
+      return;
+    }
 
     const newMsg = {
       _id: response.data?.messageId || uuidv4(),
@@ -286,14 +323,36 @@ export default function ChatContainer({ currentChat, socket, onBack }) {
               </span>
             ) : currentChat.isOnline ? (
               <span className="online-badge live">● Online</span>
-            ) : (
+            ) : currentChat.lastSeen ? (
               <span className="online-badge">
                 {formatLastSeen(currentChat.lastSeen)}
               </span>
-            )}
+            ) : null}
           </div>
         </div>
-        <Logout />
+        <div className="header-actions">
+          {onToggleBlock && (
+            <div className="chat-menu" ref={menuRef}>
+              <button
+                type="button"
+                className="menu-btn"
+                onClick={() => setShowMenu((v) => !v)}
+                title="More"
+              >
+                <BiDotsVerticalRounded />
+              </button>
+              {showMenu && (
+                <div className="menu-dropdown">
+                  <button type="button" onClick={handleBlockClick}>
+                    {currentChat.isBlocked ? "Unblock" : "Block"}{" "}
+                    {currentChat.username}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+          <Logout />
+        </div>
       </div>
 
       <div className="chat-messages" ref={chatMessagesRef}>
@@ -417,11 +476,20 @@ export default function ChatContainer({ currentChat, socket, onBack }) {
         )}
       </div>
 
-      <ChatInput
-        handleSendMsg={handleSendMsg}
-        socket={socket}
-        currentChat={currentChat}
-      />
+      {currentChat.isBlocked ? (
+        <div className="blocked-bar">
+          <span>You blocked {currentChat.username}.</span>
+          <button type="button" onClick={() => onToggleBlock(currentChat)}>
+            Unblock
+          </button>
+        </div>
+      ) : (
+        <ChatInput
+          handleSendMsg={handleSendMsg}
+          socket={socket}
+          currentChat={currentChat}
+        />
+      )}
 
       {previewImage && (
         <ImageModal onClick={() => setPreviewImage(null)}>
@@ -598,6 +666,94 @@ const Container = styled.div`
             animation: pulseDots 1.4s infinite;
           }
         }
+      }
+    }
+  }
+
+  .chat-header .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+
+    .chat-menu {
+      position: relative;
+
+      .menu-btn {
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #cbd5e1;
+        font-size: 1.3rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.2s ease;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.12);
+        }
+      }
+
+      .menu-dropdown {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 0.4rem);
+        min-width: 11rem;
+        background: rgba(15, 23, 42, 0.98);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+        padding: 0.3rem;
+        z-index: 30;
+
+        button {
+          width: 100%;
+          text-align: left;
+          background: transparent;
+          border: none;
+          color: #f87171;
+          font-size: 0.9rem;
+          font-weight: 600;
+          padding: 0.65rem 0.8rem;
+          border-radius: 8px;
+          cursor: pointer;
+
+          &:hover {
+            background: rgba(239, 68, 68, 0.12);
+          }
+        }
+      }
+    }
+  }
+
+  .blocked-bar {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 0 1rem;
+    background: rgba(11, 15, 26, 0.7);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    color: #94a3b8;
+    font-size: 0.9rem;
+
+    button {
+      background: rgba(99, 102, 241, 0.2);
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      color: #c7d2fe;
+      border-radius: 9999px;
+      padding: 0.4rem 1rem;
+      font-weight: 600;
+      cursor: pointer;
+
+      &:hover {
+        background: #6366f1;
+        color: #fff;
       }
     }
   }

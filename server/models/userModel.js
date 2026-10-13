@@ -35,6 +35,15 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  // People shown in this user's chat list (WhatsApp style)
+  contacts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Users" }],
+  // People this user has blocked
+  blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "Users" }],
+  // Set once existing chat partners have been copied into `contacts`
+  contactsInitialized: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 module.exports = mongoose.model("Users", userSchema);

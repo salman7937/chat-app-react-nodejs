@@ -25,6 +25,12 @@ const MessageSchema = mongoose.Schema(
       enum: ["sent", "delivered", "read"],
       default: "sent",
     },
+    // true when the recipient had blocked the sender at send time:
+    // the sender sees it as sent, the recipient never receives it
+    blockedDelivery: {
+      type: Boolean,
+      default: false,
+    },
     reactions: [
       {
         userId: {

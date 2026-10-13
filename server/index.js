@@ -7,6 +7,7 @@ const app = express();
 const socket = require("socket.io");
 const Messages = require("./models/messageModel");
 const User = require("./models/userModel");
+const { notifyStatusChange, isBlockedEither } = require("./utils/presence");
 require("dotenv").config();
 
 app.use(cors());
@@ -57,28 +58,30 @@ io.on("connection", (socket) => {
     socket.userId = userId;
     try {
       await User.findByIdAndUpdate(userId, { isOnline: true });
-      io.emit("user-status-changed", { userId, isOnline: true });
+      await notifyStatusChange(userId, { userId, isOnline: true });
     } catch (err) {
       console.log(err.message);
     }
   });
 
-  socket.on("typing", (data) => {
+  socket.on("typing", async (data) => {
     const sendUserSocket = onlineUsers.get(data.to);
-    if (sendUserSocket) {
+    if (sendUserSocket && !(await isBlockedEither(data.from, data.to))) {
       socket.to(sendUserSocket).emit("user-typing", data.from);
     }
   });
 
-  socket.on("stop-typing", (data) => {
+  socket.on("stop-typing", async (data) => {
     const sendUserSocket = onlineUsers.get(data.to);
-    if (sendUserSocket) {
+    if (sendUserSocket && !(await isBlockedEither(data.from, data.to))) {
       socket.to(sendUserSocket).emit("user-stop-typing", data.from);
     }
   });
 
-  socket.on("send-msg", (data) => {
+  socket.on("send-msg", async (data) => {
     const to = data.to;
+    // Blocked either way: drop silently - no delivery, no "delivered" tick
+    if (await isBlockedEither(data.from, to)) return;
     const isRecipientOnline = onlineUsers.has(to);
 
     const payload = {
@@ -115,7 +118,10 @@ io.on("connection", (socket) => {
           { $set: { status: "read" } }
         );
         const sendUserSocket = onlineUsers.get(data.to);
-        if (sendUserSocket) {
+        if (
+          sendUserSocket &&
+          !(await isBlockedEither(data.from, data.to))
+        ) {
           socket.to(sendUserSocket).emit("messages-read-by-user", {
             readerId: data.from,
           });
@@ -126,9 +132,9 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("send-reaction", (data) => {
+  socket.on("send-reaction", async (data) => {
     const sendUserSocket = onlineUsers.get(data.to);
-    if (sendUserSocket) {
+    if (sendUserSocket && !(await isBlockedEither(data.from, data.to))) {
       socket.to(sendUserSocket).emit("reaction-received", {
         messageId: data.messageId,
         reactions: data.reactions,
@@ -145,7 +151,7 @@ io.on("connection", (socket) => {
           isOnline: false,
           lastSeen: now,
         });
-        io.emit("user-status-changed", {
+        await notifyStatusChange(socket.userId, {
           userId: socket.userId,
           isOnline: false,
           lastSeen: now,

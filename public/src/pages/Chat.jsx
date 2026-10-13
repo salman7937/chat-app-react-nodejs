@@ -1,12 +1,29 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
 import styled from "styled-components";
-import { allUsersRoute, host, unreadCountsRoute } from "../utils/APIRoutes";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import {
+  allUsersRoute,
+  host,
+  unreadCountsRoute,
+  addContactRoute,
+  blockRoute,
+  unblockRoute,
+} from "../utils/APIRoutes";
 import ChatContainer from "../components/ChatContainer";
 import Contacts from "../components/Contacts";
 import Welcome from "../components/Welcome";
+
+const toastOptions = {
+  position: "bottom-right",
+  autoClose: 3000,
+  pauseOnHover: true,
+  draggable: true,
+  theme: "dark",
+};
 
 export default function Chat() {
   const navigate = useNavigate();
@@ -15,6 +32,22 @@ export default function Chat() {
   const [currentChat, setCurrentChat] = useState(undefined);
   const [currentUser, setCurrentUser] = useState(undefined);
   const [unreadCounts, setUnreadCounts] = useState({});
+  const contactsRef = useRef([]);
+  contactsRef.current = contacts;
+
+  const refreshContacts = useCallback(async () => {
+    if (!currentUser?._id) return;
+    try {
+      const { data } = await axios.get(`${allUsersRoute}/${currentUser._id}`);
+      if (Array.isArray(data)) {
+        setContacts(data);
+        // keep the open chat's header (online / last seen / blocked) in sync
+        setCurrentChat((prev) =>
+          prev ? data.find((c) => c._id === prev._id) || prev : prev
+        );
+      }
+    } catch (err) { }
+  }, [currentUser]);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -80,6 +113,13 @@ export default function Chat() {
     if (socket.current) {
       const handleIncomingMsg = (payload) => {
         const senderId = payload?.from;
+        // First message from someone new: they now belong in the chat list
+        if (
+          senderId &&
+          !contactsRef.current.some((c) => c._id === senderId)
+        ) {
+          refreshContacts();
+        }
         if (senderId && (!currentChat || currentChat._id !== senderId)) {
           setUnreadCounts((prev) => ({
             ...prev,
@@ -88,12 +128,15 @@ export default function Chat() {
         }
       };
 
-      socket.current.on("msg-recieve", handleIncomingMsg);
+      const currentSocket = socket.current;
+      currentSocket.on("msg-recieve", handleIncomingMsg);
+      currentSocket.on("contacts-changed", refreshContacts);
       return () => {
-        socket.current?.off("msg-recieve", handleIncomingMsg);
+        currentSocket.off("msg-recieve", handleIncomingMsg);
+        currentSocket.off("contacts-changed", refreshContacts);
       };
     }
-  }, [currentChat]);
+  }, [currentChat, refreshContacts]);
 
   useEffect(() => {
     const fetchContacts = async () => {
@@ -122,6 +165,57 @@ export default function Chat() {
     }
   };
 
+  const handleAddContact = async (user) => {
+    if (!currentUser) return;
+    const existing = contactsRef.current.find((c) => c._id === user._id);
+    if (existing) {
+      handleChatChange(existing);
+      return;
+    }
+    try {
+      const { data } = await axios.post(addContactRoute, {
+        userId: currentUser._id,
+        contactId: user._id,
+      });
+      if (data.status) {
+        setContacts((prev) =>
+          prev.some((c) => c._id === data.contact._id)
+            ? prev
+            : [data.contact, ...prev]
+        );
+        handleChatChange(data.contact);
+      }
+    } catch (err) { }
+  };
+
+  const handleToggleBlock = async (contact) => {
+    if (!currentUser || !contact) return;
+    const blocking = !contact.isBlocked;
+    try {
+      await axios.post(blocking ? blockRoute : unblockRoute, {
+        userId: currentUser._id,
+        targetId: contact._id,
+      });
+      const patch = (c) =>
+        c._id === contact._id
+          ? blocking
+            ? { ...c, isBlocked: true, isOnline: false, lastSeen: null }
+            : { ...c, isBlocked: false }
+          : c;
+      setContacts((prev) => prev.map(patch));
+      setCurrentChat((prev) => (prev ? patch(prev) : prev));
+      // on unblock, fetch the contact's real presence again
+      if (!blocking) refreshContacts();
+      if (blocking) {
+        toast.success(`${contact.username} blocked`, toastOptions);
+      } else {
+        toast.info(`${contact.username} unblocked`, toastOptions);
+      }
+    } catch (err) {
+      toast.error("Something went wrong. Please try again.", toastOptions);
+    }
+  };
+
   return (
     <>
       <Container>
@@ -131,6 +225,8 @@ export default function Chat() {
             changeChat={handleChatChange}
             unreadCounts={unreadCounts}
             activeChatId={currentChat?._id}
+            onAddContact={handleAddContact}
+            currentUserId={currentUser?._id}
           />
           {currentChat === undefined ? (
             <Welcome />
@@ -139,10 +235,12 @@ export default function Chat() {
               currentChat={currentChat}
               socket={socket}
               onBack={() => setCurrentChat(undefined)}
+              onToggleBlock={handleToggleBlock}
             />
           )}
         </div>
       </Container>
+      <ToastContainer />
     </>
   );
 }

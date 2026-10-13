@@ -1,4 +1,5 @@
 const Messages = require("../models/messageModel");
+const User = require("../models/userModel");
 const mongoose = require("mongoose");
 
 module.exports.getMessages = async (req, res, next) => {
@@ -19,6 +20,8 @@ module.exports.getMessages = async (req, res, next) => {
       users: {
         $all: [from, to],
       },
+      // messages sent while the viewer had blocked the sender stay hidden
+      $or: [{ blockedDelivery: { $ne: true } }, { sender: from }],
     }).sort({ updatedAt: 1 });
 
     const projectedMessages = messages.map((msg) => {
@@ -43,8 +46,29 @@ module.exports.addMessage = async (req, res, next) => {
   try {
     const { from, to, message, messageType, mediaUrl } = req.body;
 
+    const [sender, recipient] = await Promise.all([
+      User.findById(from).select("blockedUsers"),
+      User.findById(to).select("blockedUsers"),
+    ]);
+    if (!sender || !recipient) {
+      return res.status(404).json({ status: false, msg: "User not found" });
+    }
+    // The sender blocked this contact: they have to unblock first
+    if (sender.blockedUsers.some((id) => id.toString() === to)) {
+      return res.status(403).json({
+        status: false,
+        blocked: true,
+        msg: "You blocked this contact. Unblock to send messages.",
+      });
+    }
+    // The recipient blocked the sender: store silently, never deliver
+    const blockedByRecipient = recipient.blockedUsers.some(
+      (id) => id.toString() === from
+    );
+
     const isRecipientOnline = global.onlineUsers && global.onlineUsers.has(to);
-    const initialStatus = isRecipientOnline ? "delivered" : "sent";
+    const initialStatus =
+      isRecipientOnline && !blockedByRecipient ? "delivered" : "sent";
 
     const data = await Messages.create({
       message: { text: message || "" },
@@ -53,10 +77,18 @@ module.exports.addMessage = async (req, res, next) => {
       users: [from, to],
       sender: from,
       status: initialStatus,
+      blockedDelivery: blockedByRecipient,
       reactions: [],
     });
 
     if (data) {
+      if (!blockedByRecipient) {
+        // First message makes the sender show up in the recipient's chats
+        await Promise.all([
+          User.updateOne({ _id: to }, { $addToSet: { contacts: from } }),
+          User.updateOne({ _id: from }, { $addToSet: { contacts: to } }),
+        ]);
+      }
       return res.json({
         msg: "Message added successfully.",
         messageId: data._id,
@@ -85,6 +117,7 @@ module.exports.getUnreadCounts = async (req, res, next) => {
           users: userId,
           sender: { $ne: new mongoose.Types.ObjectId(userId) },
           status: { $ne: "read" },
+          blockedDelivery: { $ne: true },
         },
       },
       {

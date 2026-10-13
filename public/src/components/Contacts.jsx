@@ -1,12 +1,21 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import Logo from "../assets/logo.svg";
+import { BiPlus } from "react-icons/bi";
 import Logout from "./Logout";
+import AddContact from "./AddContact";
 
-export default function Contacts({ contacts, changeChat, unreadCounts = {}, activeChatId }) {
+export default function Contacts({
+  contacts,
+  changeChat,
+  unreadCounts = {},
+  activeChatId,
+  onAddContact,
+  currentUserId,
+}) {
   const [currentUserName, setCurrentUserName] = useState(undefined);
   const [currentUserImage, setCurrentUserImage] = useState(undefined);
-  const [currentSelected, setCurrentSelected] = useState(undefined);
+  const [showAddContact, setShowAddContact] = useState(false);
   useEffect(() => {
     const getUserData = async () => {
       const data = await JSON.parse(
@@ -19,12 +28,7 @@ export default function Contacts({ contacts, changeChat, unreadCounts = {}, acti
     };
     getUserData();
   }, []);
-  useEffect(() => {
-    // chat was closed (mobile back button) - clear the highlight
-    if (!activeChatId) setCurrentSelected(undefined);
-  }, [activeChatId]);
-  const changeCurrentChat = (index, contact) => {
-    setCurrentSelected(index);
+  const changeCurrentChat = (contact) => {
     changeChat(contact);
   };
   return (
@@ -36,18 +40,33 @@ export default function Contacts({ contacts, changeChat, unreadCounts = {}, acti
               <img src={Logo} alt="logo" />
             </div>
             <h3>Snappy</h3>
+            <button
+              type="button"
+              className="add-btn"
+              onClick={() => setShowAddContact(true)}
+              title="New chat"
+            >
+              <BiPlus />
+            </button>
           </div>
           <div className="contacts">
             <div className="section-label">DIRECT MESSAGES</div>
-            {contacts.map((contact, index) => {
+            {contacts.length === 0 && (
+              <div className="empty-state">
+                <p>No chats yet.</p>
+                <button type="button" onClick={() => setShowAddContact(true)}>
+                  Start a new chat
+                </button>
+              </div>
+            )}
+            {contacts.map((contact) => {
               const unread = unreadCounts[contact._id] || 0;
+              const isSelected = contact._id === activeChatId;
               return (
                 <div
                   key={contact._id}
-                  className={`contact ${
-                    index === currentSelected ? "selected" : ""
-                  }`}
-                  onClick={() => changeCurrentChat(index, contact)}
+                  className={`contact ${isSelected ? "selected" : ""}`}
+                  onClick={() => changeCurrentChat(contact)}
                 >
                   <div className="avatar">
                     <img
@@ -58,11 +77,14 @@ export default function Contacts({ contacts, changeChat, unreadCounts = {}, acti
                   </div>
                   <div className="username">
                     <h3>{contact.username}</h3>
+                    {contact.isBlocked && (
+                      <span className="blocked-tag">Blocked</span>
+                    )}
                   </div>
-                  {unread > 0 && index !== currentSelected && (
+                  {unread > 0 && !isSelected && (
                     <span className="unread-badge">{unread}</span>
                   )}
-                  {index === currentSelected && <span className="active-pip" />}
+                  {isSelected && <span className="active-pip" />}
                 </div>
               );
             })}
@@ -85,6 +107,16 @@ export default function Contacts({ contacts, changeChat, unreadCounts = {}, acti
               <Logout />
             </div>
           </div>
+          {showAddContact && (
+            <AddContact
+              currentUserId={currentUserId}
+              onClose={() => setShowAddContact(false)}
+              onSelect={(user) => {
+                setShowAddContact(false);
+                if (onAddContact) onAddContact(user);
+              }}
+            />
+          )}
         </Container>
       )}
     </>
@@ -123,6 +155,28 @@ const Container = styled.div`
       }
     }
 
+    .add-btn {
+      order: 3;
+      margin-left: auto;
+      width: 2.2rem;
+      height: 2.2rem;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(99, 102, 241, 0.18);
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      color: #c7d2fe;
+      font-size: 1.35rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: #6366f1;
+        color: #fff;
+      }
+    }
+
     h3 {
       font-size: 1.2rem;
       font-weight: 700;
@@ -156,6 +210,27 @@ const Container = styled.div`
       &-thumb {
         background-color: rgba(255, 255, 255, 0.1);
         border-radius: 10px;
+      }
+    }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 2rem 1rem;
+      color: #94a3b8;
+      font-size: 0.9rem;
+      text-align: center;
+
+      button {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        padding: 0.6rem 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
       }
     }
 
@@ -211,6 +286,14 @@ const Container = styled.div`
 
       .username {
         overflow: hidden;
+
+        .blocked-tag {
+          display: block;
+          font-size: 0.68rem;
+          font-weight: 600;
+          color: #f87171;
+        }
+
         h3 {
           color: #e2e8f0;
           font-size: 0.9rem;
