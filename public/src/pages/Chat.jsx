@@ -125,16 +125,21 @@ export default function Chat() {
   return (
     <>
       <Container>
-        <div className="container">
+        <div className={`container ${currentChat ? "chat-open" : ""}`}>
           <Contacts
             contacts={contacts}
             changeChat={handleChatChange}
             unreadCounts={unreadCounts}
+            activeChatId={currentChat?._id}
           />
           {currentChat === undefined ? (
             <Welcome />
           ) : (
-            <ChatContainer currentChat={currentChat} socket={socket} />
+            <ChatContainer
+              currentChat={currentChat}
+              socket={socket}
+              onBack={() => setCurrentChat(undefined)}
+            />
           )}
         </div>
       </Container>
@@ -148,6 +153,11 @@ const Container = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: center;
+
+  @media screen and (max-width: 480px) {
+    height: 100dvh;
+  }
+
   align-items: center;
   position: relative;
   overflow: hidden;
@@ -208,6 +218,26 @@ const Container = styled.div`
       grid-template-columns: 35% 65%;
       height: 90vh;
       width: 94vw;
+    }
+
+    @media screen and (max-width: 480px) {
+      grid-template-columns: minmax(0, 1fr);
+      height: 100%;
+      max-height: none;
+      width: 100%;
+      max-width: none;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+      animation: none;
+
+      /* One pane at a time: contacts list, or the open chat */
+      &.chat-open > :first-child {
+        display: none;
+      }
+      &:not(.chat-open) > :nth-child(2) {
+        display: none;
+      }
     }
   }
 

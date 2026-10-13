@@ -66,6 +66,22 @@ const Container = styled.div`
     max-width: 400px;
   }
 
+  @media screen and (max-width: 480px) {
+    padding: 1.25rem;
+
+    .robot-wrapper img {
+      height: 12rem;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+    }
+
+    h3 {
+      font-size: 0.95rem;
+    }
+  }
+
   @keyframes float {
     0% {
       transform: translateY(0px);

@@ -9,12 +9,17 @@ import {
   recieveMessageRoute,
   reactMessageRoute,
 } from "../utils/APIRoutes";
-import { BiCheck, BiCheckDouble, BiDotsVerticalRounded } from "react-icons/bi";
+import {
+  BiCheck,
+  BiCheckDouble,
+  BiDotsVerticalRounded,
+  BiArrowBack,
+} from "react-icons/bi";
 import { IoMdClose } from "react-icons/io";
 
 const REACTION_EMOJIS = ["❤️", "😂", "👍", "🔥", "😮", "😢"];
 
-export default function ChatContainer({ currentChat, socket }) {
+export default function ChatContainer({ currentChat, socket, onBack }) {
   const [messages, setMessages] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const [activeMenuMessageId, setActiveMenuMessageId] = useState(null);
@@ -256,6 +261,16 @@ export default function ChatContainer({ currentChat, socket }) {
     <Container>
       <div className="chat-header">
         <div className="user-details">
+          {onBack && (
+            <button
+              type="button"
+              className="back-btn"
+              onClick={onBack}
+              title="Back"
+            >
+              <BiArrowBack />
+            </button>
+          )}
           <div className="avatar">
             <img
               src={`data:image/svg+xml;base64,${currentChat.avatarImage}`}
@@ -500,6 +515,23 @@ const Container = styled.div`
       display: flex;
       align-items: center;
       gap: 1rem;
+      min-width: 0;
+
+      .back-btn {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: none;
+        color: #f8fafc;
+        font-size: 1.5rem;
+        width: 2.2rem;
+        height: 2.2rem;
+        margin-left: -0.5rem;
+        border-radius: 50%;
+        cursor: pointer;
+        flex-shrink: 0;
+      }
 
       .avatar {
         width: 2.6rem;
@@ -531,9 +563,14 @@ const Container = styled.div`
       }
 
       .username {
+        min-width: 0;
+
         h3 {
           color: #f8fafc;
           font-size: 1rem;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
           font-weight: 700;
           letter-spacing: -0.01em;
         }
@@ -851,6 +888,61 @@ const Container = styled.div`
     to {
       opacity: 1;
       transform: translateY(0) scale(1);
+    }
+  }
+
+  /* Touch devices have no hover - keep the message menu reachable */
+  @media (hover: none) {
+    .chat-messages .message-wrapper .message-content-row .dots-menu-btn {
+      opacity: 0.65;
+    }
+  }
+
+  @media screen and (max-width: 480px) {
+    grid-template-rows: 4rem 1fr 4.3rem;
+
+    .chat-header {
+      padding: 0 1rem;
+
+      .user-details {
+        gap: 0.7rem;
+
+        .back-btn {
+          display: flex;
+        }
+      }
+    }
+
+    .chat-messages {
+      padding: 1rem;
+      gap: 0.7rem;
+
+      .message-wrapper {
+        .message {
+          max-width: 85%;
+
+          .content {
+            padding: 0.6rem 0.9rem;
+            font-size: 0.92rem;
+
+            .media-image-container .media-image {
+              max-width: 100%;
+              width: auto;
+              max-height: 200px;
+            }
+
+            .media-audio-container .media-audio {
+              max-width: 100%;
+              width: 100%;
+            }
+          }
+        }
+
+        .reaction-bar {
+          max-width: 100%;
+          padding: 0.2rem 0.35rem;
+        }
+      }
     }
   }
 `;

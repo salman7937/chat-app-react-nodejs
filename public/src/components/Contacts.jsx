@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import Logo from "../assets/logo.svg";
+import Logout from "./Logout";
 
-export default function Contacts({ contacts, changeChat, unreadCounts = {} }) {
+export default function Contacts({ contacts, changeChat, unreadCounts = {}, activeChatId }) {
   const [currentUserName, setCurrentUserName] = useState(undefined);
   const [currentUserImage, setCurrentUserImage] = useState(undefined);
   const [currentSelected, setCurrentSelected] = useState(undefined);
@@ -18,6 +19,10 @@ export default function Contacts({ contacts, changeChat, unreadCounts = {} }) {
     };
     getUserData();
   }, []);
+  useEffect(() => {
+    // chat was closed (mobile back button) - clear the highlight
+    if (!activeChatId) setCurrentSelected(undefined);
+  }, [activeChatId]);
   const changeCurrentChat = (index, contact) => {
     setCurrentSelected(index);
     changeChat(contact);
@@ -75,6 +80,9 @@ export default function Contacts({ contacts, changeChat, unreadCounts = {} }) {
             <div className="username">
               <h2>{currentUserName}</h2>
               <span className="status-text">Active now</span>
+            </div>
+            <div className="mobile-logout">
+              <Logout />
             </div>
           </div>
         </Container>
@@ -313,9 +321,32 @@ const Container = styled.div`
       }
     }
 
+    .mobile-logout {
+      display: none;
+      margin-left: auto;
+    }
+
     @media screen and (min-width: 720px) and (max-width: 1080px) {
       gap: 0.6rem;
       padding: 0 0.8rem;
+    }
+
+    @media screen and (max-width: 480px) {
+      padding: 0 1rem;
+
+      .mobile-logout {
+        display: flex;
+      }
+    }
+  }
+
+  @media screen and (max-width: 480px) {
+    .brand {
+      padding: 0 1rem;
+    }
+
+    .contacts .contact {
+      padding: 0.75rem 0.85rem;
     }
   }
 `;

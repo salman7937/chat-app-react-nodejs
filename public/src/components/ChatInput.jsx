@@ -271,6 +271,11 @@ const ImagePreviewBar = styled.div`
   position: absolute;
   top: -70px;
   left: 1.8rem;
+
+  @media screen and (max-width: 480px) {
+    left: 0.8rem;
+  }
+
   background: rgba(15, 23, 42, 0.95);
   backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -346,6 +351,11 @@ const RecordingBar = styled.div`
   border-radius: 9999px;
   padding: 0.4rem 0.8rem 0.4rem 1.4rem;
   animation: recPulse 0.3s ease;
+
+  @media screen and (max-width: 480px) {
+    padding: 0.35rem 0.5rem 0.35rem 0.9rem;
+    min-width: 0;
+  }
 
   .recording-status {
     display: flex;
@@ -426,6 +436,35 @@ const Container = styled.div`
   @media screen and (min-width: 720px) and (max-width: 1080px) {
     padding: 0 1rem;
     gap: 0.5rem;
+  }
+
+  @media screen and (max-width: 480px) {
+    padding: 0 0.6rem;
+    gap: 0.3rem;
+
+    .button-container {
+      gap: 0;
+
+      .action-icon-btn {
+        padding: 0.35rem;
+      }
+
+      .emoji .emoji-picker-react {
+        width: calc(100vw - 1.2rem) !important;
+        max-width: 350px;
+      }
+    }
+
+    .input-container {
+      min-width: 0;
+      padding-left: 0.9rem;
+
+      input {
+        min-width: 0;
+        /* 16px stops iOS from zooming on focus */
+        font-size: 16px;
+      }
+    }
   }
 
   .button-container {

@@ -124,6 +124,39 @@ const Container = styled.div`
   height: 100vh;
   width: 100vw;
 
+  @media screen and (max-width: 480px) {
+    height: 100dvh;
+    overflow-y: auto;
+    padding: 1rem 0;
+
+    .card {
+      margin: auto;
+      width: 92%;
+      padding: 2rem 1.25rem;
+      gap: 1.75rem;
+      border-radius: 20px;
+    }
+
+    .title-container h1 {
+      font-size: 1.5rem;
+    }
+
+    .avatars {
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.9rem;
+
+      .avatar img {
+        height: 4.2rem;
+        width: 4.2rem;
+      }
+    }
+
+    .submit-btn {
+      width: 100%;
+    }
+  }
+
   .loader {
     max-inline-size: 100%;
     filter: drop-shadow(0 10px 20px rgba(99, 102, 241, 0.3));

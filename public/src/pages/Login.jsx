@@ -109,6 +109,24 @@ const FormContainer = styled.div`
   align-items: center;
   position: relative;
   overflow: hidden;
+
+  @media screen and (max-width: 480px) {
+    height: 100dvh;
+    overflow-y: auto;
+    padding: 1rem 0;
+
+    form {
+      margin: auto;
+      padding: 1.75rem 1.4rem;
+      gap: 1.1rem;
+      border-radius: 20px;
+    }
+
+    input {
+      /* 16px stops iOS from zooming on focus */
+      font-size: 16px;
+    }
+  }
   background: radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
               radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.12) 0%, transparent 40%),
               #0a0d14;
