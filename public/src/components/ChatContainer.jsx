@@ -205,7 +205,7 @@ export default function ChatContainer({ currentChat, socket }) {
         });
       }
     } catch (err) { }
-    setHoveredMessageId(null);
+    setActiveMenuMessageId(null);
   };
 
   const formatLastSeen = (dateString) => {
