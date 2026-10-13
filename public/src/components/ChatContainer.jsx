@@ -22,23 +22,29 @@ export default function ChatContainer({ currentChat, socket }) {
   const chatMessagesRef = useRef(null);
   const [arrivalMessage, setArrivalMessage] = useState(null);
 
-  useEffect(async () => {
-    const data = await JSON.parse(
-      localStorage.getItem(process.env.REACT_APP_LOCALHOST_KEY)
-    );
-    const response = await axios.post(recieveMessageRoute, {
-      from: data._id,
-      to: currentChat._id,
-    });
-    setMessages(response.data);
-    setIsTyping(false);
+  useEffect(() => {
+    const fetchMessages = async () => {
+      const data = await JSON.parse(
+        localStorage.getItem(process.env.REACT_APP_LOCALHOST_KEY)
+      );
+      if (data && currentChat) {
+        const response = await axios.post(recieveMessageRoute, {
+          from: data._id,
+          to: currentChat._id,
+        });
+        setMessages(response.data);
+        setIsTyping(false);
 
-    if (socket.current) {
-      socket.current.emit("mark-messages-read", {
-        from: data._id,
-        to: currentChat._id,
-      });
-    }
+        if (socket.current) {
+          socket.current.emit("mark-messages-read", {
+            from: data._id,
+            to: currentChat._id,
+          });
+        }
+      }
+    };
+    fetchMessages();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentChat]);
 
   useEffect(() => {
@@ -160,15 +166,17 @@ export default function ChatContainer({ currentChat, socket }) {
       socket.current.on("msg-delivered", handleMsgDelivered);
       socket.current.on("reaction-received", handleReactionReceived);
 
+      const currentSocket = socket.current;
       return () => {
-        socket.current?.off("msg-recieve", handleMsgRecieve);
-        socket.current?.off("user-typing", handleUserTyping);
-        socket.current?.off("user-stop-typing", handleUserStopTyping);
-        socket.current?.off("messages-read-by-user", handleMessagesRead);
-        socket.current?.off("msg-delivered", handleMsgDelivered);
-        socket.current?.off("reaction-received", handleReactionReceived);
+        currentSocket?.off("msg-recieve", handleMsgRecieve);
+        currentSocket?.off("user-typing", handleUserTyping);
+        currentSocket?.off("user-stop-typing", handleUserStopTyping);
+        currentSocket?.off("messages-read-by-user", handleMessagesRead);
+        currentSocket?.off("msg-delivered", handleMsgDelivered);
+        currentSocket?.off("reaction-received", handleReactionReceived);
       };
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentChat]);
 
   useEffect(() => {

@@ -16,25 +16,31 @@ export default function Chat() {
   const [currentUser, setCurrentUser] = useState(undefined);
   const [unreadCounts, setUnreadCounts] = useState({});
 
-  useEffect(async () => {
-    if (!localStorage.getItem(process.env.REACT_APP_LOCALHOST_KEY)) {
-      navigate("/login");
-    } else {
-      setCurrentUser(
-        await JSON.parse(
-          localStorage.getItem(process.env.REACT_APP_LOCALHOST_KEY)
-        )
-      );
-    }
-  }, []);
+  useEffect(() => {
+    const checkUser = async () => {
+      if (!localStorage.getItem(process.env.REACT_APP_LOCALHOST_KEY)) {
+        navigate("/login");
+      } else {
+        setCurrentUser(
+          await JSON.parse(
+            localStorage.getItem(process.env.REACT_APP_LOCALHOST_KEY)
+          )
+        );
+      }
+    };
+    checkUser();
+  }, [navigate]);
 
-  useEffect(async () => {
-    if (currentUser?._id) {
-      try {
-        const { data } = await axios.get(`${unreadCountsRoute}/${currentUser._id}`);
-        setUnreadCounts(data || {});
-      } catch (err) { }
-    }
+  useEffect(() => {
+    const fetchUnread = async () => {
+      if (currentUser?._id) {
+        try {
+          const { data } = await axios.get(`${unreadCountsRoute}/${currentUser._id}`);
+          setUnreadCounts(data || {});
+        } catch (err) { }
+      }
+    };
+    fetchUnread();
   }, [currentUser]);
 
   useEffect(() => {
@@ -83,16 +89,19 @@ export default function Chat() {
     }
   }, [currentChat]);
 
-  useEffect(async () => {
-    if (currentUser) {
-      if (currentUser.isAvatarImageSet) {
-        const data = await axios.get(`${allUsersRoute}/${currentUser._id}`);
-        setContacts(data.data);
-      } else {
-        navigate("/setAvatar");
+  useEffect(() => {
+    const fetchContacts = async () => {
+      if (currentUser) {
+        if (currentUser.isAvatarImageSet) {
+          const data = await axios.get(`${allUsersRoute}/${currentUser._id}`);
+          setContacts(data.data);
+        } else {
+          navigate("/setAvatar");
+        }
       }
-    }
-  }, [currentUser]);
+    };
+    fetchContacts();
+  }, [currentUser, navigate]);
 
   const handleChatChange = (chat) => {
     setCurrentChat(chat);
