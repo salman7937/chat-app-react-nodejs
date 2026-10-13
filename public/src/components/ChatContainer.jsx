@@ -564,8 +564,11 @@ const ImageModal = styled.div`
 const Container = styled.div`
   height: 100%;
   max-height: 100%;
+  width: 100%;
+  min-width: 0;
   display: grid;
-  grid-template-rows: 4.5rem 1fr 4.8rem;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 4.5rem minmax(0, 1fr) 4.8rem;
   overflow: hidden;
   background: rgba(13, 18, 30, 0.4);
 
@@ -574,6 +577,8 @@ const Container = styled.div`
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
     padding: 0 1.8rem;
     background: rgba(11, 15, 26, 0.7);
     backdrop-filter: blur(12px);
@@ -767,6 +772,8 @@ const Container = styled.div`
   .chat-messages {
     height: 100%;
     min-height: 0;
+    min-width: 0;
+    overflow-x: hidden;
     padding: 1.2rem 2rem;
     display: flex;
     flex-direction: column;
@@ -785,6 +792,8 @@ const Container = styled.div`
       display: flex;
       flex-direction: column;
       position: relative;
+      min-width: 0;
+      max-width: 100%;
 
       &.sended {
         align-items: flex-end;
@@ -838,6 +847,8 @@ const Container = styled.div`
         display: flex;
         align-items: center;
         gap: 0.35rem;
+        min-width: 0;
+        max-width: 100%;
 
         .dots-menu-btn {
           background: transparent;
@@ -873,6 +884,7 @@ const Container = styled.div`
         display: flex;
         flex-direction: column;
         position: relative;
+        min-width: 0;
         max-width: 65%;
         animation: msgPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -884,7 +896,8 @@ const Container = styled.div`
           padding: 0.7rem 1.1rem;
           font-size: 0.95rem;
           line-height: 1.5;
-          overflow-wrap: break-word;
+          overflow-wrap: anywhere;
+          word-break: break-word;
 
           p {
             margin: 0;
@@ -1054,8 +1067,8 @@ const Container = styled.div`
     }
   }
 
-  @media screen and (max-width: 480px) {
-    grid-template-rows: 4rem 1fr 4.3rem;
+  @media screen and (max-width: 719px) {
+    grid-template-rows: 4rem minmax(0, 1fr) 4.3rem;
 
     .chat-header {
       padding: 0 1rem;
@@ -1075,7 +1088,7 @@ const Container = styled.div`
 
       .message-wrapper {
         .message {
-          max-width: 85%;
+          max-width: calc(100vw - 6rem);
 
           .content {
             padding: 0.6rem 0.9rem;

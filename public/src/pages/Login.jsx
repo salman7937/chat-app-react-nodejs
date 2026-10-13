@@ -102,7 +102,8 @@ export default function Login() {
 
 const FormContainer = styled.div`
   height: 100vh;
-  width: 100vw;
+  height: 100dvh;
+  width: 100%;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -110,7 +111,7 @@ const FormContainer = styled.div`
   position: relative;
   overflow: hidden;
 
-  @media screen and (max-width: 480px) {
+  @media screen and (max-width: 719px) {
     height: 100dvh;
     overflow-y: auto;
     padding: 1rem 0;

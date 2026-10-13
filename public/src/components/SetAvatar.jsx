@@ -122,9 +122,10 @@ const Container = styled.div`
               radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.12) 0%, transparent 40%),
               #0a0d14;
   height: 100vh;
-  width: 100vw;
+  height: 100dvh;
+  width: 100%;
 
-  @media screen and (max-width: 480px) {
+  @media screen and (max-width: 719px) {
     height: 100dvh;
     overflow-y: auto;
     padding: 1rem 0;

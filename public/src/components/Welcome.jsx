@@ -66,7 +66,7 @@ const Container = styled.div`
     max-width: 400px;
   }
 
-  @media screen and (max-width: 480px) {
+  @media screen and (max-width: 719px) {
     padding: 1.25rem;
 
     .robot-wrapper img {

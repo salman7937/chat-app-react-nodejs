@@ -272,7 +272,7 @@ const ImagePreviewBar = styled.div`
   top: -70px;
   left: 1.8rem;
 
-  @media screen and (max-width: 480px) {
+  @media screen and (max-width: 719px) {
     left: 0.8rem;
   }
 
@@ -352,7 +352,7 @@ const RecordingBar = styled.div`
   padding: 0.4rem 0.8rem 0.4rem 1.4rem;
   animation: recPulse 0.3s ease;
 
-  @media screen and (max-width: 480px) {
+  @media screen and (max-width: 719px) {
     padding: 0.35rem 0.5rem 0.35rem 0.9rem;
     min-width: 0;
   }
@@ -438,7 +438,7 @@ const Container = styled.div`
     gap: 0.5rem;
   }
 
-  @media screen and (max-width: 480px) {
+  @media screen and (max-width: 719px) {
     padding: 0 0.6rem;
     gap: 0.3rem;
 
@@ -450,8 +450,7 @@ const Container = styled.div`
       }
 
       .emoji .emoji-picker-react {
-        width: calc(100vw - 1.2rem) !important;
-        max-width: 350px;
+        width: min(350px, calc(100vw - 1.2rem)) !important;
       }
     }
 

@@ -260,7 +260,7 @@ const Overlay = styled.div`
     }
   }
 
-  @media screen and (max-width: 480px) {
+  @media screen and (max-width: 719px) {
     padding: 0;
     align-items: stretch;
 

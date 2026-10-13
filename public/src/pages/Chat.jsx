@@ -247,12 +247,13 @@ export default function Chat() {
 
 const Container = styled.div`
   height: 100vh;
-  width: 100vw;
+  height: 100dvh;
+  width: 100%;
   display: flex;
   flex-direction: column;
   justify-content: center;
 
-  @media screen and (max-width: 480px) {
+  @media screen and (max-width: 719px) {
     height: 100dvh;
   }
 
@@ -318,7 +319,7 @@ const Container = styled.div`
       width: 94vw;
     }
 
-    @media screen and (max-width: 480px) {
+    @media screen and (max-width: 719px) {
       grid-template-columns: minmax(0, 1fr);
       height: 100%;
       max-height: none;

@@ -414,7 +414,7 @@ const Container = styled.div`
       padding: 0 0.8rem;
     }
 
-    @media screen and (max-width: 480px) {
+    @media screen and (max-width: 719px) {
       padding: 0 1rem;
 
       .mobile-logout {
@@ -423,7 +423,7 @@ const Container = styled.div`
     }
   }
 
-  @media screen and (max-width: 480px) {
+  @media screen and (max-width: 719px) {
     .brand {
       padding: 0 1rem;
     }
